@@ -10,6 +10,22 @@ import fitz
 CURRENT_TIME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
+def confirmation(promt: str) -> bool:
+    return input(f"{promt} (yes/[no]): ").strip().lower() in ("y", "yes")
+
+
+def confirm_or_exit(
+    is_fail: bool,
+    *,
+    continue_promt: Optional[str] = None,
+    on_failure_text: Optional[str] = None,
+) -> None:
+    if is_fail and (continue_promt is None or not confirmation(continue_promt)):
+        if on_failure_text is not None:
+            print(on_failure_text)
+        exit()
+
+
 def get_output_name_for_file(file_path: str, add_timestamp: bool = True) -> str:
     file_name = os.path.basename(file_path)
     return f"{file_name if not add_timestamp else f'{CURRENT_TIME}_{file_name}'}"
@@ -53,9 +69,7 @@ def process_single_file(
     **kwargs
 ) -> None:
 
-    if not os.path.isfile(file_path):
-        print(f"Input '{file_path}' is not file")
-        exit()
+    confirm_or_exit(not os.path.isfile(file_path), on_failure_text=f"Input '{file_path}' is not file")
     
     output_path = os.path.abspath(
         get_output_name_for_file(file_path, add_timestamp=True)
@@ -64,11 +78,12 @@ def process_single_file(
     if output_prefix_dir is not None:
         output_path = os.path.join(output_prefix_dir, output_path)
 
-    if os.path.isfile(output_path):
-        answer = input(f"Output file '{output_path}' is already exist. Do you want to overwrite? (yes/[no]): ")
-        if answer not in ("y", "yes", "Yes"):
-            print("Abort")
-            exit()
+    if os.path.isfile(output_path):        
+        confirm_or_exit(
+            True,
+            continue_promt=f"Output file '{output_path}' is already exist. Do you want to overwrite?",
+            on_failure_text="Abort"
+        )
         os.remove(output_path)
     
     add_invisible_text(file_path, output_path, **kwargs)
@@ -104,15 +119,17 @@ def main():
         ("input", "input_dir"),
         ("text", "text_file"),
     ):
-        if all(getattr(args, attr, None) is None for attr in attrs_pair):
-            print(f"\nYou must specify at least one of '{attrs_pair[0]}' or '{attrs_pair[1]}'\n")
-            exit()
+        confirm_or_exit(
+            all(getattr(args, attr, None) is None for attr in attrs_pair),
+            on_failure_text=f"\nYou must specify at least one of '{attrs_pair[0]}' or '{attrs_pair[1]}'\n",
+        )
 
     actual_text = args.text
     if args.text_file is not None:
-        if not os.path.isdir(args.input_dir):
-            print(f"'{args.text_file}' (text_file) is not found")
-            exit()
+        confirm_or_exit(
+            not os.path.isfile(args.text_file),
+            on_failure_text=f"'{args.text_file}' (text_file) is not found",
+        )
         with open(args.text_file, "r", encoding="utf-8") as file:
             actual_text = file.read()
 
@@ -130,12 +147,18 @@ def main():
     }
 
     if args.input_dir is not None:
-        if not os.path.isdir(args.input_dir):
-            print(f"'{args.input_dir}' directory is not found")
-            exit()
+        confirm_or_exit(
+            not os.path.isdir(args.input_dir),
+            on_failure_text=f"'{args.input_dir}' directory is not found",
+        )
         process_files_in_dir(args.input_dir, output_prefix_dir, **arguments)
     
-    else:
+    else:        
+        confirm_or_exit(
+            not args.input.endswith(".pdf"),
+            continue_promt=f"Input '{args.input}' is not a PDF file, do you want to continue?",
+            on_failure_text="Abort",
+        )
         process_single_file(args.input, args.out, output_prefix_dir, **arguments)
 
 

@@ -47,7 +47,7 @@ To eliminate any issues with text recognition, you simply need to add text that 
    ```
 4. Thats all! Get your optimized resume and apply it!
 
-> (in this case resume will be in the same folder as input, and name also like input but with timestamp prefix)
+> (in this case resume will be in the same folder where the app was executed, and name will be the same as the input file but with a timestamp prefix)
 
 ## 🚧 CLI Usage
 ```

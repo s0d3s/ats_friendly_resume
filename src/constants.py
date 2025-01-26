@@ -1,5 +1,5 @@
 package = "ats_friendly_resume"
-version = "0.9.3"
+version = "0.9.4"
 author = "S0D3S"
 repo_url = "https://github.com/s0d3s/ats_friendly_resume"
 description = "Land your interview! Optimize any PDF for seamless identification by Applicant Tracking Systems (ATS)"
